@@ -4000,7 +4000,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                 sd = traverse_obj(pr, ('streamingData', {dict})) or {}
                 sd[STREAMING_DATA_CLIENT_NAME] = client
                 sd[STREAMING_DATA_PO_TOKEN] = po_token
-                for f in traverse_obj(sd, (('formats', 'adaptiveFormats'), ..., {dict})):
+                for f in traverse_obj(sd, (('adaptiveFormats'), ..., {dict})):
                     f[STREAMING_DATA_CLIENT_NAME] = client
                     f[STREAMING_DATA_PO_TOKEN] = po_token
                 if deprioritize_pr:
@@ -4076,7 +4076,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             'audio_quality_ultralow', 'audio_quality_low', 'audio_quality_medium', 'audio_quality_high',  # Audio only formats
             'small', 'medium', 'large', 'hd720', 'hd1080', 'hd1440', 'hd2160', 'hd2880', 'highres',
         ])
-        streaming_formats = traverse_obj(streaming_data, (..., ('formats', 'adaptiveFormats'), ...))
+        streaming_formats = traverse_obj(streaming_data, (..., ('adaptiveFormats'), ...))
         format_types = self._configuration_arg('formats')
         all_formats = 'duplicate' in format_types
         if self._configuration_arg('include_duplicate_formats'):
