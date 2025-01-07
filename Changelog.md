@@ -4,6 +4,17 @@
 # To create a release, dispatch the https://github.com/yt-dlp/yt-dlp/actions/workflows/release.yml workflow on master
 -->
 
+### 2025.01.07.000003
+
+#### Core changes
+- [Reapply "skip format"](https://github.com/yt-dlp/yt-dlp/commit/48dc77d417cea5adb5aa4735a3adcf623dd14ca5) by [pukkandan](https://github.com/pukkandan)
+- [Revert "skip format"](https://github.com/yt-dlp/yt-dlp/commit/b7f4b8041b826ef364a5568b22343419ed27d86d) by [pukkandan](https://github.com/pukkandan)
+- [skip format](https://github.com/yt-dlp/yt-dlp/commit/245b8f0e36a1c85b37b1ff6f2c1449d2fb8a7a4f) by [pukkandan](https://github.com/pukkandan)
+- [support init_range and index_range](https://github.com/yt-dlp/yt-dlp/commit/7e1b06b768e9e70f7fc88a9df08b944c73fd4031) by [pukkandan](https://github.com/pukkandan)
+
+#### Extractor changes
+- **youtube**: [Fix DASH formats incorrectly skipped in some situations](https://github.com/yt-dlp/yt-dlp/commit/0b6b7742c2e7f2a1fcb0b54ef3dd484bab404b3f) ([#11910](https://github.com/yt-dlp/yt-dlp/issues/11910)) by [coletdjnz](https://github.com/coletdjnz)
+
 ### 2024.12.23
 
 #### Core changes
