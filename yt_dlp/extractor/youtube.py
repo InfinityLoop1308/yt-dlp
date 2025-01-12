@@ -1424,7 +1424,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
     }
     _SUBTITLE_FORMATS = ('json3', 'srv1', 'srv2', 'srv3', 'ttml', 'vtt')
     _DEFAULT_CLIENTS = ('ios', 'tv')
-    _DEFAULT_AUTHED_CLIENTS = ('web_creator', 'tv')
+    _DEFAULT_AUTHED_CLIENTS = ('ios', 'tv')
 
     _GEO_BYPASS = False
 
@@ -5065,9 +5065,12 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         info['__post_extractor'] = self.extract_comments(master_ytcfg, video_id, contents, webpage)
 
         info['dislike_count'] = dislike_count
-        info['related_items_raw'] = json.dumps(traverse_obj(
+        related_items_raw = traverse_obj(
             initial_data, ('contents', 'twoColumnWatchNextResults', 'secondaryResults', 'secondaryResults', 'results'),
-            expected_type=list, default=[]))
+            expected_type=list, default=[])
+        if len(related_items_raw) > 1 and 'itemSectionRenderer' in related_items_raw[1]:
+            related_items_raw = related_items_raw[1]['itemSectionRenderer']['contents'][1:]
+        info['related_items_raw'] = json.dumps(related_items_raw)
         info['contents_raw'] = json.dumps(contents)
 
         self.mark_watched(video_id, player_responses)
