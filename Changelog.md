@@ -4,6 +4,34 @@
 # To create a release, dispatch the https://github.com/yt-dlp/yt-dlp/actions/workflows/release.yml workflow on master
 -->
 
+### 2025.01.12.095612
+
+#### Core changes
+- [Fix filename sanitization with `--no-windows-filenames`](https://github.com/yt-dlp/yt-dlp/commit/8346b549150003df988538e54c9d8bc4de568979) ([#11988](https://github.com/yt-dlp/yt-dlp/issues/11988)) by [bashonly](https://github.com/bashonly)
+- [Merge branch 'master' of github.com:InfinityLoop1308/yt-dlp](https://github.com/yt-dlp/yt-dlp/commit/27723fc5388eae0e3ae9b5ae1214f61758d66ebe) by [pukkandan](https://github.com/pukkandan)
+- [Merge branch 'yt-dlp:master' into master](https://github.com/yt-dlp/yt-dlp/commit/08d008b04c8923d813dd97af182194c5cb838903) by [pukkandan](https://github.com/pukkandan)
+- [Merge remote-tracking branch 'origin/master'](https://github.com/yt-dlp/yt-dlp/commit/2154261359ae0b5722730a5b69d1b94410d99908) by [pukkandan](https://github.com/pukkandan)
+- [Reapply "skip format"](https://github.com/yt-dlp/yt-dlp/commit/48dc77d417cea5adb5aa4735a3adcf623dd14ca5) by [pukkandan](https://github.com/pukkandan)
+- [Revert "skip format"](https://github.com/yt-dlp/yt-dlp/commit/b7f4b8041b826ef364a5568b22343419ed27d86d) by [pukkandan](https://github.com/pukkandan)
+- [Update release.yml](https://github.com/yt-dlp/yt-dlp/commit/1c9ee987d198d6aad270e4cc2676dd735e4cf7b4) by [pukkandan](https://github.com/pukkandan)
+- [Validate retries values are non-negative](https://github.com/yt-dlp/yt-dlp/commit/1f4e1e85a27c5b43e34d7706cfd88ffce1b56a4a) ([#11927](https://github.com/yt-dlp/yt-dlp/issues/11927)) by [Strkmn](https://github.com/Strkmn)
+- [hot fix: use tv & mweb](https://github.com/yt-dlp/yt-dlp/commit/ffb17ccea0594cee3dac73a9e907dc9e253f4b7f) by [pukkandan](https://github.com/pukkandan)
+- [skip format](https://github.com/yt-dlp/yt-dlp/commit/245b8f0e36a1c85b37b1ff6f2c1449d2fb8a7a4f) by [pukkandan](https://github.com/pukkandan)
+- [support init_range and index_range](https://github.com/yt-dlp/yt-dlp/commit/7e1b06b768e9e70f7fc88a9df08b944c73fd4031) by [pukkandan](https://github.com/pukkandan)
+- [update](https://github.com/yt-dlp/yt-dlp/commit/f74e8f58f3ae25b1fdfa35e8b6b2413382a8298d) by [pukkandan](https://github.com/pukkandan)
+- [update](https://github.com/yt-dlp/yt-dlp/commit/e9e71c785edbabade57188063e3af6cde394929b) by [pukkandan](https://github.com/pukkandan)
+- [update](https://github.com/yt-dlp/yt-dlp/commit/a50b821faf6bbba19acb590579a1707e3c66a44e) by [pukkandan](https://github.com/pukkandan)
+- [update related_item](https://github.com/yt-dlp/yt-dlp/commit/3bf42d7787ada963a834e51c6aceb060d70c97d0) by [pukkandan](https://github.com/pukkandan)
+- fix: [tv has no live](https://github.com/yt-dlp/yt-dlp/commit/dfb1058005fbe0b1cb3dbc8eb0908e1eb0125b3c) by [pukkandan](https://github.com/pukkandan)
+
+#### Extractor changes
+- **plvideo**: [Add extractor](https://github.com/yt-dlp/yt-dlp/commit/3c14e9191f3035b9a729d1d87bc0381f42de57cf) ([#10657](https://github.com/yt-dlp/yt-dlp/issues/10657)) by [Sanceilaks](https://github.com/Sanceilaks), [seproDev](https://github.com/seproDev)
+- **xiaohongshu**: [Extend `_VALID_URL`](https://github.com/yt-dlp/yt-dlp/commit/763ed06ee69f13949397897bd42ff2ec3dc3d384) ([#11806](https://github.com/yt-dlp/yt-dlp/issues/11806)) by [HobbyistDev](https://github.com/HobbyistDev)
+- **youtube**
+    - [Fix DASH formats incorrectly skipped in some situations](https://github.com/yt-dlp/yt-dlp/commit/0b6b7742c2e7f2a1fcb0b54ef3dd484bab404b3f) ([#11910](https://github.com/yt-dlp/yt-dlp/issues/11910)) by [coletdjnz](https://github.com/coletdjnz)
+    - [Refactor cookie auth](https://github.com/yt-dlp/yt-dlp/commit/75079f4e3f7dce49b61ef01da7adcd9876a0ca3b) ([#11989](https://github.com/yt-dlp/yt-dlp/issues/11989)) by [coletdjnz](https://github.com/coletdjnz)
+    - [Use `tv` instead of `mweb` client by default](https://github.com/yt-dlp/yt-dlp/commit/712d2abb32f59b2d246be2901255f84f1a4c30b3) ([#12059](https://github.com/yt-dlp/yt-dlp/issues/12059)) by [coletdjnz](https://github.com/coletdjnz)
+
 ### 2024.12.23
 
 #### Core changes
