@@ -71,14 +71,6 @@ from ..utils import (
 STREAMING_DATA_CLIENT_NAME = '__yt_dlp_client'
 STREAMING_DATA_PO_TOKEN = '__yt_dlp_po_token'
 
-#
-#
-from function_profiler import AutoProfiler
-
-# Start profiling everything
-profiler = AutoProfiler(log_file='logs/profile_results.log')
-profiler.start()
-
 # any clients starting with _ cannot be explicitly requested by the user
 INNERTUBE_CLIENTS = {
     'web': {
