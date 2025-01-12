@@ -4438,6 +4438,33 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
         webpage, master_ytcfg, player_responses, player_url = self._download_player_responses(url, smuggled_data, video_id, webpage_url)
 
+        initial_data = None
+        dislike_count = -1
+        def fetch_initial_page():
+            nonlocal initial_data
+            if webpage:
+                initial_data = self.extract_yt_initial_data(video_id, webpage, fatal=False)
+                if not traverse_obj(initial_data, 'contents'):
+                    self.report_warning('Incomplete data received in embedded initial data; re-fetching using API.')
+                    initial_data = None
+            if not initial_data:
+                query = {'videoId': video_id}
+                query.update(self._get_checkok_params())
+                initial_data = self._extract_response(
+                    item_id=video_id, ep='next', fatal=False,
+                    ytcfg=master_ytcfg, query=query, check_get_keys='contents',
+                    headers=self.generate_api_headers(ytcfg=master_ytcfg),
+                    note='Downloading initial data API JSON')
+
+        def fetch_dislike_count():
+            nonlocal dislike_count
+            dislike_count = self._download_json("https://returnyoutubedislikeapi.com/votes?" + "videoId=" + video_id, video_id)['dislikes']
+
+        thread = threading.Thread(target=fetch_initial_page)
+        thread.start()
+        thread1 = threading.Thread(target=fetch_dislike_count)
+        thread1.start()
+
         playability_statuses = traverse_obj(
             player_responses, (..., 'playabilityStatus'), expected_type=dict)
 
@@ -4762,21 +4789,8 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                     'release_date': release_date,
                     'release_year': int_or_none(release_year),
                 })
-
-        initial_data = None
-        if webpage:
-            initial_data = self.extract_yt_initial_data(video_id, webpage, fatal=False)
-            if not traverse_obj(initial_data, 'contents'):
-                self.report_warning('Incomplete data received in embedded initial data; re-fetching using API.')
-                initial_data = None
-        if not initial_data:
-            query = {'videoId': video_id}
-            query.update(self._get_checkok_params())
-            initial_data = self._extract_response(
-                item_id=video_id, ep='next', fatal=False,
-                ytcfg=master_ytcfg, query=query, check_get_keys='contents',
-                headers=self.generate_api_headers(ytcfg=master_ytcfg),
-                note='Downloading initial data API JSON')
+        thread.join()
+        thread1.join()
 
         COMMENTS_SECTION_IDS = ('comment-item-section', 'engagement-panel-comments-section')
         info['comment_count'] = traverse_obj(initial_data, (
@@ -4873,7 +4887,9 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
             vor = traverse_obj(vsir, ('owner', 'videoOwnerRenderer'))
             info.update({
                 'channel': self._get_text(vor, 'title'),
-                'channel_follower_count': self._get_count(vor, 'subscriberCountText')})
+                'channel_follower_count': self._get_count(vor, 'subscriberCountText'),
+                'channel_avatar': vor['thumbnail']['thumbnails'][-1]['url']
+            })
 
             if not channel_handle:
                 channel_handle = self.handle_from_url(
@@ -4976,6 +4992,12 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
                     or get_first(microformats, 'isUnlisted', expected_type=bool))))
 
         info['__post_extractor'] = self.extract_comments(master_ytcfg, video_id, contents, webpage)
+
+        info['dislike_count'] = dislike_count
+        info['related_items_raw'] = json.dumps(traverse_obj(
+            initial_data, ('contents', 'twoColumnWatchNextResults', 'secondaryResults', 'secondaryResults', 'results'),
+            expected_type=list, default=[]))
+        info['contents_raw'] = json.dumps(contents)
 
         self.mark_watched(video_id, player_responses)
 
