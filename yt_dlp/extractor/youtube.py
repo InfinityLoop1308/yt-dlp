@@ -69,6 +69,7 @@ from ..utils import (
 )
 
 STREAMING_DATA_CLIENT_NAME = '__yt_dlp_client'
+STREAMING_DATA_PO_TOKEN = '__yt_dlp_po_token'
 
 # any clients starting with _ cannot be explicitly requested by the user
 INNERTUBE_CLIENTS = {
