@@ -3925,7 +3925,12 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         if po_token:
             yt_query['serviceIntegrityDimensions'] = {'poToken': po_token}
 
-        sts = self._extract_signature_timestamp(video_id, player_url, master_ytcfg, fatal=False) if player_url else None
+        sts = None
+        try:
+            sts = int(self._configuration_arg('sts')[0])
+        except:
+            pass
+        sts = sts or (self._extract_signature_timestamp(video_id, player_url, master_ytcfg, fatal=False) if player_url else None)
         yt_query.update(self._generate_player_context(sts))
         return self._extract_response(
             item_id=video_id, ep='player', query=yt_query,
@@ -4016,6 +4021,10 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
         tried_iframe_fallback = False
         player_url = visitor_data = data_sync_id = None
+        try:
+            player_url = self._configuration_arg('player_url')[0]
+        except:
+            pass
         skipped_clients = {}
         def extract_client():
             nonlocal player_url,tried_iframe_fallback,visitor_data,data_sync_id
