@@ -67,7 +67,7 @@ from ..utils import (
     urljoin,
     variadic,
 )
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 STREAMING_DATA_CLIENT_NAME = '__yt_dlp_client'
 STREAMING_DATA_PO_TOKEN = '__yt_dlp_po_token'
 
@@ -4017,94 +4017,98 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         tried_iframe_fallback = False
         player_url = visitor_data = data_sync_id = None
         skipped_clients = {}
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            while clients:
-                deprioritize_pr = False
-                client, base_client, variant = _split_innertube_client(clients.pop())
-                player_ytcfg = master_ytcfg if client == 'web' else {}
-                if 'configs' not in self._configuration_arg('player_skip') and client != 'web':
-                    player_ytcfg = self._download_ytcfg(client, video_id) or player_ytcfg
+        def extract_client():
+            nonlocal player_url,tried_iframe_fallback,visitor_data,data_sync_id
+            deprioritize_pr = False
+            client, base_client, variant = _split_innertube_client(clients.pop())
+            player_ytcfg = master_ytcfg if client == 'web' else {}
+            if 'configs' not in self._configuration_arg('player_skip') and client != 'web':
+                player_ytcfg = self._download_ytcfg(client, video_id) or player_ytcfg
 
-                if not player_url:
-                    future = executor.submit(
-                        self._extract_player_url, master_ytcfg, player_ytcfg, webpage=webpage
-                    )
-                    player_url = player_url or future.result()
-                require_js_player = self._get_default_ytcfg(client).get('REQUIRE_JS_PLAYER')
-                if 'js' in self._configuration_arg('player_skip'):
-                    require_js_player = False
-                    player_url = None
+            player_url = player_url or self._extract_player_url(master_ytcfg, player_ytcfg, webpage=webpage)
+            require_js_player = self._get_default_ytcfg(client).get('REQUIRE_JS_PLAYER')
+            if 'js' in self._configuration_arg('player_skip'):
+                require_js_player = False
+                player_url = None
 
-                if not player_url and not tried_iframe_fallback and require_js_player:
-                    player_url = self._download_player_url(video_id)
-                    tried_iframe_fallback = True
+            if not player_url and not tried_iframe_fallback and require_js_player:
+                player_url = self._download_player_url(video_id)
+                tried_iframe_fallback = True
 
-                visitor_data = visitor_data or self._extract_visitor_data(master_ytcfg, initial_pr, player_ytcfg)
-                data_sync_id = data_sync_id or self._extract_data_sync_id(master_ytcfg, initial_pr, player_ytcfg)
-                po_token = self.fetch_po_token(
-                    client=client, visitor_data=visitor_data,
-                    data_sync_id=data_sync_id if self.is_authenticated else None,
-                    player_url=player_url if require_js_player else None,
-                )
+            visitor_data = visitor_data or self._extract_visitor_data(master_ytcfg, initial_pr, player_ytcfg)
+            data_sync_id = data_sync_id or self._extract_data_sync_id(master_ytcfg, initial_pr, player_ytcfg)
+            po_token = self.fetch_po_token(
+                client=client, visitor_data=visitor_data,
+                data_sync_id=data_sync_id if self.is_authenticated else None,
+                player_url=player_url if require_js_player else None,
+            )
 
-                require_po_token = self._get_default_ytcfg(client).get('REQUIRE_PO_TOKEN')
-                if not po_token and require_po_token and 'missing_pot' in self._configuration_arg('formats'):
-                    self.report_warning(
-                        f'No PO Token provided for {client} client, '
-                        f'which may be required for working {client} formats. This client will be deprioritized', only_once=True)
-                    deprioritize_pr = True
+            require_po_token = self._get_default_ytcfg(client).get('REQUIRE_PO_TOKEN')
+            if not po_token and require_po_token and 'missing_pot' in self._configuration_arg('formats'):
+                self.report_warning(
+                    f'No PO Token provided for {client} client, '
+                    f'which may be required for working {client} formats. This client will be deprioritized', only_once=True)
+                deprioritize_pr = True
 
-                pr = initial_pr if client == 'web' else None
-                try:
-                    pr = pr or self._extract_player_response(
-                        client, video_id,
-                        master_ytcfg=player_ytcfg or master_ytcfg,
-                        player_ytcfg=player_ytcfg,
-                        player_url=player_url,
-                        initial_pr=initial_pr,
-                        visitor_data=visitor_data,
-                        data_sync_id=data_sync_id,
-                        po_token=po_token)
-                except ExtractorError as e:
-                    self.report_warning(e)
-                    continue
+            pr = initial_pr if client == 'web' else None
+            try:
+                pr = pr or self._extract_player_response(
+                    client, video_id,
+                    master_ytcfg=player_ytcfg or master_ytcfg,
+                    player_ytcfg=player_ytcfg,
+                    player_url=player_url,
+                    initial_pr=initial_pr,
+                    visitor_data=visitor_data,
+                    data_sync_id=data_sync_id,
+                    po_token=po_token)
+            except ExtractorError as e:
+                self.report_warning(e)
+                return
 
-                if pr_id := self._invalid_player_response(pr, video_id):
-                    skipped_clients[client] = pr_id
-                elif pr:
-                    # Save client name for introspection later
-                    sd = traverse_obj(pr, ('streamingData', {dict})) or {}
-                    sd[STREAMING_DATA_CLIENT_NAME] = client
-                    sd[STREAMING_DATA_PO_TOKEN] = po_token
-                    for f in traverse_obj(sd, (('adaptiveFormats'), ..., {dict})):
-                        f[STREAMING_DATA_CLIENT_NAME] = client
-                        f[STREAMING_DATA_PO_TOKEN] = po_token
-                    if deprioritize_pr:
-                        deprioritized_prs.append(pr)
-                    else:
-                        prs.append(pr)
+            if pr_id := self._invalid_player_response(pr, video_id):
+                skipped_clients[client] = pr_id
+            elif pr:
+                # Save client name for introspection later
+                sd = traverse_obj(pr, ('streamingData', {dict})) or {}
+                sd[STREAMING_DATA_CLIENT_NAME] = client
+                sd[STREAMING_DATA_PO_TOKEN] = po_token
+                for f in traverse_obj(sd, (('adaptiveFormats'), ..., {dict})):
+                    f[STREAMING_DATA_CLIENT_NAME] = client
+                    f[STREAMING_DATA_PO_TOKEN] = po_token
+                if deprioritize_pr:
+                    deprioritized_prs.append(pr)
+                else:
+                    prs.append(pr)
 
-                # web_embedded can work around age-gate and age-verification for some embeddable videos
-                if self._is_agegated(pr) and variant != 'web_embedded':
-                    append_client(f'web_embedded.{base_client}')
-                # Unauthenticated users will only get web_embedded client formats if age-gated
-                if self._is_agegated(pr) and not self.is_authenticated:
-                    self.to_screen(
-                        f'{video_id}: This video is age-restricted; some formats may be missing '
-                        f'without authentication. {self._login_hint()}', only_once=True)
+            # web_embedded can work around age-gate and age-verification for some embeddable videos
+            if self._is_agegated(pr) and variant != 'web_embedded':
+                append_client(f'web_embedded.{base_client}')
+            # Unauthenticated users will only get web_embedded client formats if age-gated
+            if self._is_agegated(pr) and not self.is_authenticated:
+                self.to_screen(
+                    f'{video_id}: This video is age-restricted; some formats may be missing '
+                    f'without authentication. {self._login_hint()}', only_once=True)
 
-                ''' This code is pointless while web_creator is in _DEFAULT_AUTHED_CLIENTS
-                # EU countries require age-verification for accounts to access age-restricted videos
-                # If account is not age-verified, _is_agegated() will be truthy for non-embedded clients
-                embedding_is_disabled = variant == 'web_embedded' and self._is_unplayable(pr)
-                if self.is_authenticated and (self._is_agegated(pr) or embedding_is_disabled):
-                    self.to_screen(
-                        f'{video_id}: This video is age-restricted and YouTube is requiring '
-                        'account age-verification; some formats may be missing', only_once=True)
-                    # web_creator can work around the age-verification requirement
-                    # tv_embedded may(?) still work around age-verification if the video is embeddable
-                    append_client('web_creator')
-                '''
+            ''' This code is pointless while web_creator is in _DEFAULT_AUTHED_CLIENTS
+            # EU countries require age-verification for accounts to access age-restricted videos
+            # If account is not age-verified, _is_agegated() will be truthy for non-embedded clients
+            embedding_is_disabled = variant == 'web_embedded' and self._is_unplayable(pr)
+            if self.is_authenticated and (self._is_agegated(pr) or embedding_is_disabled):
+                self.to_screen(
+                    f'{video_id}: This video is age-restricted and YouTube is requiring '
+                    'account age-verification; some formats may be missing', only_once=True)
+                # web_creator can work around the age-verification requirement
+                # tv_embedded may(?) still work around age-verification if the video is embeddable
+                append_client('web_creator')
+            '''
+        thread_pool = []
+        while clients:
+            thread = threading.Thread(target=extract_client)
+            thread.start()
+            thread_pool.append(thread)
+
+        for thread in thread_pool:
+            thread.join()
 
         prs.extend(deprioritized_prs)
 
@@ -4466,7 +4470,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
 
     def _download_player_responses(self, url, smuggled_data, video_id, webpage_url):
         webpage = None
-        if 'webpage' not in self._configuration_arg('player_skip'):
+        if False:
             query = {'bpctr': '9999999999', 'has_verified': '1'}
             pp = self._configuration_arg('player_params', [None], casesense=True)[0]
             if pp:
@@ -4512,25 +4516,17 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         base_url = self.http_scheme() + '//www.youtube.com/'
         webpage_url = base_url + 'watch?v=' + video_id
 
-        webpage, master_ytcfg, player_responses, player_url = self._download_player_responses(url, smuggled_data, video_id, webpage_url)
-
         initial_data = None
         dislike_count = -1
         def fetch_initial_page():
             nonlocal initial_data
-            if webpage:
-                initial_data = self.extract_yt_initial_data(video_id, webpage, fatal=False)
-                if not traverse_obj(initial_data, 'contents'):
-                    self.report_warning('Incomplete data received in embedded initial data; re-fetching using API.')
-                    initial_data = None
-            if not initial_data:
-                query = {'videoId': video_id}
-                query.update(self._get_checkok_params())
-                initial_data = self._extract_response(
-                    item_id=video_id, ep='next', fatal=False,
-                    ytcfg=master_ytcfg, query=query, check_get_keys='contents',
-                    headers=self.generate_api_headers(ytcfg=master_ytcfg),
-                    note='Downloading initial data API JSON')
+            query = {'videoId': video_id}
+            query.update(self._get_checkok_params())
+            initial_data = self._extract_response(
+                item_id=video_id, ep='next', fatal=False,
+                ytcfg=self._get_default_ytcfg(), query=query, check_get_keys='contents',
+                headers=self.generate_api_headers(ytcfg=self._get_default_ytcfg()),
+                note='Downloading initial data API JSON')
 
         def fetch_dislike_count():
             nonlocal dislike_count
@@ -4540,6 +4536,10 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         thread.start()
         thread1 = threading.Thread(target=fetch_dislike_count)
         thread1.start()
+
+        webpage, master_ytcfg, player_responses, player_url = self._download_player_responses(url, smuggled_data, video_id, webpage_url)
+
+
 
         playability_statuses = traverse_obj(
             player_responses, (..., 'playabilityStatus'), expected_type=dict)
