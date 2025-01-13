@@ -4022,7 +4022,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         tried_iframe_fallback = False
         player_url = visitor_data = data_sync_id = None
         try:
-            player_url = self._configuration_arg('player_url')[0]
+            player_url = f'https://www.youtube.com/s/player/{self._configuration_arg('player_version')[0]}/player_ias.vflset/en_US/base.js'
         except:
             pass
         skipped_clients = {}
