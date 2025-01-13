@@ -69,6 +69,14 @@ from ..utils import (
 )
 
 STREAMING_DATA_CLIENT_NAME = '__yt_dlp_client'
+#
+#
+from function_profiler import AutoProfiler
+
+# Start profiling everything
+profiler = AutoProfiler(log_file='logs/profile_results.log')
+profiler.start()
+
 STREAMING_DATA_PO_TOKEN = '__yt_dlp_po_token'
 
 # any clients starting with _ cannot be explicitly requested by the user
@@ -4022,7 +4030,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         tried_iframe_fallback = False
         player_url = visitor_data = data_sync_id = None
         try:
-            player_url = f'https://www.youtube.com/s/player/{self._configuration_arg('player_version')[0]}/player_ias.vflset/en_US/base.js'
+            player_url = 'https://www.youtube.com/s/player/{}/player_ias.vflset/en_US/base.js'.format(self._configuration_arg('player_version')[0])
         except:
             pass
         skipped_clients = {}
